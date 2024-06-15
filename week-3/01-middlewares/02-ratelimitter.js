@@ -16,6 +16,29 @@ setInterval(() => {
     numberOfRequestsForUser = {};
 }, 1000)
 
+function ratelimiterMiddleware(req, res, next) {
+
+  const userId = req.headers['user-id']; // get the user id from the headers
+
+  if(numberOfRequestsForUser[userId]) {  // check if the user has made a request before
+    numberOfRequestsForUser[userId]++; // increment the number of requests for the user
+
+    if(numberOfRequestsForUser[userId] > 5) {
+      res.status(404).json({ msg: 'Rate limit exceeded' }); // if the user has made more than 5 requests, block them
+    } else { // if the user has made less than 5 requests, let them through
+      next(); // call the next middleware
+    }
+  }else{ // if the user has not made a request before
+      numberOfRequestsForUser[userId] = 1; // set the number of requests for the user to 1
+      next(); // let them through 
+}
+
+}
+
+app.use(ratelimiterMiddleware);
+
+
+
 app.get('/user', function(req, res) {
   res.status(200).json({ name: 'john' });
 });
